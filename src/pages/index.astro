@@ -3,5 +3,36 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout title="chrstncrrnd">
-    <h1>Astro</h1>
+    <main class="introduction">
+        <h1>Hi, I'm Christian</h1>
+        <p>
+            I'm a mathematics and computer science student interested in
+            low-level software engineering, theoretical computer science, and
+            pure mathematics.
+        </p>
+    </main>
+    <div>
+        <h2>1 - Featured Projects</h2>
+        Here go my featured projects
+    </div>
+    <div>
+        <h2>2 - Recent Posts</h2>
+        Here go my featured projects
+    </div>
 </BaseLayout>
+
+<style>
+    h1 {
+        margin: 0 0 0.75rem;
+        font-size: clamp(2rem, 5vw, 2.75rem);
+        line-height: 1.1;
+        font-weight: bold;
+    }
+
+    p {
+        max-width: 38rem;
+        margin: 0;
+        font-size: 1.15rem;
+        line-height: 1.7;
+    }
+</style>
