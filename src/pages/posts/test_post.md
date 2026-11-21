@@ -16,6 +16,7 @@ int main(void){
 ```
 
 And here is some maths:
+
 $$
 f(x) = \sum_{n=0}^{\infty}\frac{f^{n)}(x_0)}{n!}(x-x_0)^n
 $$

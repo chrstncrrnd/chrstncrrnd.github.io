@@ -20,12 +20,14 @@ const { frontmatter, url } = Astro.props;
             rel="canonical"
             href={Astro.site ? new URL(url, Astro.site).href : url}
         />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"
+        />
         <title>{frontmatter.title}</title>
     </head>
     <body>
-        <h1>
-            {frontmatter.title} by {frontmatter.author}
-        </h1>
+        <h1>{frontmatter.title} by</h1>
         <slot />
         <p>Written on: {frontmatter.date}</p>
     </body>
