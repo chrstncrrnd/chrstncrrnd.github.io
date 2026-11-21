@@ -1,7 +1,8 @@
 ---
 layout: ../../layouts/PostLayout.astro
 title: "Test Post"
-date: "21 November 2026"
+creation: "21 November 2026"
+latest_edit: "22 November 2026"
 ---
 # Hello this is a test post!
 Following is a code block:
