@@ -1,2 +1,2 @@
 # My website
-Built with astro!
+Built with Astro!
