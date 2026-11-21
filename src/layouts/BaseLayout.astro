@@ -1,8 +1,15 @@
 ---
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
+import "computer-modern/cmu-serif.css";
 const { title } = Astro.props;
 ---
+
+<style>
+    * {
+        font-family: "CMU Serif";
+    }
+</style>
 
 <html lang="en">
     <head>
