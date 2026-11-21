@@ -1,0 +1,122 @@
+---
+interface Props {
+    title: string;
+    description: string;
+    date_begin: string;
+    date_end?: string;
+    image_url: string;
+    link: string;
+    tags?: string[];
+}
+const {
+    title,
+    description,
+    date_begin,
+    date_end,
+    image_url,
+    link,
+    tags = [],
+} = Astro.props;
+---
+
+<article class="project-card">
+    <div class="preview">
+        <img src={image_url} alt="" />
+    </div>
+
+    <div class="details">
+        <h3>
+            <a href={link} target="_blank" rel="noopener noreferrer">{title}</a>
+        </h3>
+        <p>{description}</p>
+        {
+            tags.length > 0 && (
+                <ul class="tags" aria-label="Technologies">
+                    {tags.map((tag) => <li>{tag}</li>)}
+                </ul>
+            )
+        }
+        <p class="dates">{date_begin}{date_end ? ` - ${date_end}` : ""}</p>
+    </div>
+</article>
+
+<style>
+    .project-card {
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid var(--divider-color);
+        border-radius: 0.35rem;
+        background: var(--page-background);
+        transition: border-color 180ms ease;
+    }
+
+    .project-card:hover {
+        border-color: color-mix(in srgb, var(--divider-color) 55%, var(--text-color));
+    }
+
+    .preview {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        background: var(--divider-color);
+    }
+
+    .preview img {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .details {
+        padding: 1.25rem;
+    }
+
+    h3 {
+        margin: 0 0 0.55rem;
+        font-size: 1.35rem;
+        line-height: 1.2;
+    }
+
+    h3 a {
+        color: var(--text-color);
+        text-decoration: none;
+    }
+
+    h3 a:hover {
+        text-decoration: underline;
+        text-underline-offset: 0.2em;
+    }
+
+    p {
+        margin: 0;
+        line-height: 1.55;
+    }
+
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1rem 0 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .tags li {
+        padding: 0.18rem 0.55rem;
+        border: 1px solid var(--divider-color);
+        border-radius: 999px;
+        font-size: 0.75rem;
+        color: var(--text-color);
+    }
+
+    .dates {
+        margin-top: 0.65rem;
+        color: var(--text-color);
+        opacity: 0.65;
+        font-size: 0.8rem;
+    }
+</style>

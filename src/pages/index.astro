@@ -1,4 +1,6 @@
 ---
+import ProjectCard from "../components/ProjectCard.astro";
+import ProjectGrid from "../components/ProjectGrid.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
@@ -13,7 +15,32 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </main>
     <div>
         <h2>1 - Featured Projects</h2>
-        Here go my featured projects
+        <ProjectGrid>
+            <ProjectCard
+                title="First Project"
+                description="Description of first project"
+                date_begin="Jan 23rd 2026"
+                image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Mandel_zoom_00_mandelbrot_set.jpg/1920px-Mandel_zoom_00_mandelbrot_set.jpg"
+                link="https://example.com"
+                tags={["project", "software"]}
+            />
+            <ProjectCard
+                title="First Project"
+                description="Description of first project"
+                date_begin="Jan 23rd 2026"
+                image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Mandel_zoom_00_mandelbrot_set.jpg/1920px-Mandel_zoom_00_mandelbrot_set.jpg"
+                link="https://example.com"
+                tags={["project", "software"]}
+            />
+            <ProjectCard
+                title="First Project"
+                description="Description of first project"
+                date_begin="Jan 23rd 2026"
+                image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Mandel_zoom_00_mandelbrot_set.jpg/1920px-Mandel_zoom_00_mandelbrot_set.jpg"
+                link="https://example.com"
+                tags={["project", "software"]}
+            />
+        </ProjectGrid>
     </div>
     <div>
         <h2>2 - Recent Posts</h2>
