@@ -1,7 +1,3 @@
----
-const name = "Christian";
----
-
 <style>
     .container {
         display: flex;
@@ -41,6 +37,8 @@ const name = "Christian";
 
     .track {
         position: relative;
+        display: flex;
+        align-items: center;
         width: 2rem;
         height: 1.1rem;
         border: 1px solid var(--divider-color);
@@ -49,9 +47,8 @@ const name = "Christian";
     }
 
     .thumb {
-        position: absolute;
-        top: 0.15rem;
-        left: 0.15rem;
+        position: relative;
+        margin-left: 0.15rem;
         width: 0.7rem;
         height: 0.7rem;
         border-radius: 50%;
@@ -62,6 +59,12 @@ const name = "Christian";
     :global([data-theme="dark"]) .thumb {
         transform: translateX(0.9rem);
         background: #d8d0b8;
+    }
+
+    .theme-divider {
+        height: 1.1rem;
+        border-left: 1px solid var(--divider-color);
+        margin-inline: -0.25rem;
     }
 
     .sep {
@@ -78,6 +81,7 @@ const name = "Christian";
         <li>Posts</li>
         <li>Projects</li>
         <li>About</li>
+        <li class="theme-divider" aria-hidden="true"></li>
         <li>
             <button
                 class="theme-toggle"
@@ -102,7 +106,11 @@ const name = "Christian";
     const label = document.querySelector(".theme-label");
 
     function updateToggle(theme: string) {
-        if (!(toggle instanceof HTMLButtonElement) || !(label instanceof HTMLElement)) return;
+        if (
+            !(toggle instanceof HTMLButtonElement) ||
+            !(label instanceof HTMLElement)
+        )
+            return;
 
         const isDark = theme === "dark";
         toggle.setAttribute("aria-pressed", String(isDark));
