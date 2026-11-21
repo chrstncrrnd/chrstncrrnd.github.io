@@ -1,5 +1,7 @@
 ---
 import type { MarkdownLayoutProps } from "astro";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/500.css";
 import "katex/dist/katex.min.css";
 import BaseLayout from "./BaseLayout.astro";
 
@@ -168,9 +170,11 @@ const { frontmatter } = Astro.props;
         border-radius: 0.25rem;
         background: color-mix(in srgb, var(--text-color) 5%, transparent);
         padding: 0.12em 0.3em;
-        font-family:
-            ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-family: "JetBrains Mono", monospace;
         font-size: 0.82em;
+        font-feature-settings:
+            "liga" 1,
+            "calt" 1;
     }
 
     .post-content :global(pre) {
@@ -186,13 +190,19 @@ const { frontmatter } = Astro.props;
         );
         padding: 1.1rem 1.25rem;
         line-height: 1.55;
+        font-family: "JetBrains Mono", monospace !important;
+        font-feature-settings:
+            "liga" 1,
+            "calt" 1;
     }
 
-    .post-content :global(pre code) {
+    .post-content :global(pre code),
+    .post-content :global(pre *) {
         border: 0;
         background: transparent;
         padding: 0;
         font-size: 0.86em;
+        font-family: "JetBrains Mono", monospace !important;
     }
 
     .post-content :global(hr) {
