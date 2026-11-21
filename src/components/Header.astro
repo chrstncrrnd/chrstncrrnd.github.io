@@ -2,4 +2,125 @@
 const name = "Christian";
 ---
 
-<h1>This is a test, my name is: {name}!</h1>
+<style>
+    .container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 1rem;
+        padding-top: 1rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .left {
+        font-weight: bold;
+    }
+
+    .right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: var(--text-color);
+        font-family: inherit;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+    .track {
+        position: relative;
+        width: 2rem;
+        height: 1.1rem;
+        border: 1px solid var(--divider-color);
+        border-radius: 999px;
+        background: var(--page-background);
+    }
+
+    .thumb {
+        position: absolute;
+        top: 0.15rem;
+        left: 0.15rem;
+        width: 0.7rem;
+        height: 0.7rem;
+        border-radius: 50%;
+        background: #9b7543;
+        transition: transform 150ms ease;
+    }
+
+    :global([data-theme="dark"]) .thumb {
+        transform: translateX(0.9rem);
+        background: #d8d0b8;
+    }
+
+    .sep {
+        border: 0;
+        border-top: 1px solid var(--divider-color);
+        width: 100%;
+        margin: 0;
+    }
+</style>
+
+<div class="container">
+    <div class="left">chrstncrrnd</div>
+    <ul class="right">
+        <li>Posts</li>
+        <li>Projects</li>
+        <li>About</li>
+        <li>
+            <button
+                class="theme-toggle"
+                type="button"
+                aria-label="Switch to dark theme"
+                aria-pressed="false"
+            >
+                <span class="track" aria-hidden="true">
+                    <span class="thumb"></span>
+                </span>
+                <span class="theme-label">Light</span>
+            </button>
+        </li>
+    </ul>
+</div>
+
+<hr class="sep" />
+
+<script>
+    const root = document.documentElement;
+    const toggle = document.querySelector(".theme-toggle");
+    const label = document.querySelector(".theme-label");
+
+    function updateToggle(theme: string) {
+        if (!(toggle instanceof HTMLButtonElement) || !(label instanceof HTMLElement)) return;
+
+        const isDark = theme === "dark";
+        toggle.setAttribute("aria-pressed", String(isDark));
+        toggle.setAttribute(
+            "aria-label",
+            isDark ? "Switch to light theme" : "Switch to dark theme",
+        );
+        label.textContent = isDark ? "Dark" : "Light";
+    }
+
+    updateToggle(root.dataset.theme === "dark" ? "dark" : "light");
+
+    toggle?.addEventListener("click", () => {
+        const theme = root.dataset.theme === "dark" ? "light" : "dark";
+        root.dataset.theme = theme;
+        try {
+            localStorage.setItem("theme", theme);
+        } catch {}
+        updateToggle(theme);
+    });
+</script>
