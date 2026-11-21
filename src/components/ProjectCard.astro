@@ -26,17 +26,22 @@ const {
 
     <div class="details">
         <h3>
-            <a href={link} target="_blank" rel="noopener noreferrer">{title}</a>
+            <a href={link} target="_blank" rel="noopener noreferrer">
+                {title}
+            </a>
         </h3>
         <p>{description}</p>
-        {
-            tags.length > 0 && (
-                <ul class="tags" aria-label="Technologies">
-                    {tags.map((tag) => <li>{tag}</li>)}
-                </ul>
-            )
-        }
-        <p class="dates">{date_begin}{date_end ? ` - ${date_end}` : ""}</p>
+        {tags.length > 0 && (
+            <ul class="tags" aria-label="Technologies">
+                {tags.map((tag) => (
+                    <li>{tag}</li>
+                ))}
+            </ul>
+        )}
+        <p class="dates">
+            {date_begin}
+            {date_end ? ` - ${date_end}` : ""}
+        </p>
     </div>
 </article>
 
@@ -46,13 +51,17 @@ const {
         min-width: 0;
         overflow: hidden;
         border: 1px solid var(--divider-color);
-        border-radius: 0.35rem;
+        /*border-radius: 0.35rem;*/
         background: var(--page-background);
         transition: border-color 180ms ease;
     }
 
     .project-card:hover {
-        border-color: color-mix(in srgb, var(--divider-color) 55%, var(--text-color));
+        border-color: color-mix(
+            in srgb,
+            var(--divider-color) 55%,
+            var(--text-color)
+        );
     }
 
     .preview {
