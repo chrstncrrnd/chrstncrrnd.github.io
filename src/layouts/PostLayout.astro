@@ -106,7 +106,7 @@ const { frontmatter } = Astro.props;
         margin: 0 0 1.35em;
     }
 
-    .post-content :global(h2),
+    /*.post-content :global(h2),
     .post-content :global(h3),
     .post-content :global(h4) {
         scroll-margin-top: 2rem;
@@ -126,11 +126,11 @@ const { frontmatter } = Astro.props;
     .post-content :global(h4) {
         margin: 1.5em 0 0.5em;
         font-size: 1.15rem;
-    }
+    }*/
 
     .post-content :global(a) {
         color: inherit;
-        text-decoration-color: #9b7543;
+        text-decoration-color: var(--test-color);
         text-decoration-thickness: 1px;
         text-underline-offset: 0.18em;
     }
@@ -162,7 +162,7 @@ const { frontmatter } = Astro.props;
     }
 
     .post-content :global(li::marker) {
-        color: #9b7543;
+        color: var(--text-color);
     }
 
     .post-content :global(code) {
