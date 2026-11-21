@@ -17,28 +17,41 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         <h2>1 - Featured Projects</h2>
         <ProjectGrid>
             <ProjectCard
-                title="First Project"
-                description="Description of first project"
-                date_begin="Jan 23rd 2026"
-                image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Mandel_zoom_00_mandelbrot_set.jpg/1920px-Mandel_zoom_00_mandelbrot_set.jpg"
-                link="https://example.com"
-                tags={["project", "software"]}
+                title="sym_diff"
+                description="A symbolic differentiation engine written in Rust. Uses Rust's metaprogramming system to generate differentiation rules based on declarative statements."
+                date_begin="April"
+                date_end="August 2026"
+                image_url="/images/sym_diff_thumb.png"
+                link="https://github.com/chrstncrrnd/sym_diff"
+                tags={["Rust", "Metaprogramming", "Calculus", "Compilers"]}
+            />
+
+            <ProjectCard
+                title="C_OS"
+                description="Operating system for the RISC-V ISA. Uses Sv39 virtual paging. Currently under development :)"
+                date_begin="November 2026"
+                date_end="Ongoing"
+                image_url="/images/c_os_thumb.png"
+                link="https://github.com/chrstncrrnd/c_os"
+                tags={["OS", "C", "Embedded"]}
             />
             <ProjectCard
-                title="First Project"
-                description="Description of first project"
-                date_begin="Jan 23rd 2026"
+                title="E2EE Chat"
+                description="End-to-end encrypted real-time chat app. Using a TLS-inspired key exchange and packet protocol."
+                date_begin="October 2025"
+                date_end="January 2026"
                 image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Mandel_zoom_00_mandelbrot_set.jpg/1920px-Mandel_zoom_00_mandelbrot_set.jpg"
                 link="https://example.com"
-                tags={["project", "software"]}
+                tags={["Cryptography", "Python", "Sockets"]}
             />
             <ProjectCard
-                title="First Project"
-                description="Description of first project"
-                date_begin="Jan 23rd 2026"
+                title="Group app"
+                description="Social network built around the friend group."
+                date_begin="March 2023"
+                date_end="October 2024"
                 image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Mandel_zoom_00_mandelbrot_set.jpg/1920px-Mandel_zoom_00_mandelbrot_set.jpg"
-                link="https://example.com"
-                tags={["project", "software"]}
+                link="https://github.com/chrstncrrnd/group_app"
+                tags={["Dart", "Flutter", "Firebase"]}
             />
         </ProjectGrid>
     </div>
