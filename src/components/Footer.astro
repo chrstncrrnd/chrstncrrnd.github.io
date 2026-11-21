@@ -1,1 +1,46 @@
-<h1>This is a footer</h1>
+---
+const year = new Date().getFullYear();
+---
+
+<style>
+    .footer {
+        padding-block: 0.75rem 1rem;
+    }
+
+    .footer-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .sep {
+        border: 0;
+        border-top: 1px solid var(--divider-color);
+        width: 100%;
+        margin: 0 0 0.75rem;
+    }
+
+    p {
+        margin: 0;
+        color: var(--text-color);
+        font-size: 0.875rem;
+    }
+
+    a {
+        color: var(--text-color);
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+        text-underline-offset: 0.2em;
+    }
+</style>
+
+<footer class="footer">
+    <hr class="sep" />
+    <div class="footer-content">
+        <p>&copy; {year} chrstncrrnd</p>
+        <a href="https://github.com/chrstncrrnd">GitHub</a>
+    </div>
+</footer>
