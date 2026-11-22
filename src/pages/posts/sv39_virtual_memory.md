@@ -135,10 +135,45 @@ actual RISC-V specification
 [here](https://docs.riscv.org/reference/isa/v20260120/priv/supervisor.html#satp).
 
 
+## Pagetables
+
+Before we get to how to create mappings and how the MMU finds them, we must
+first define the basic data structure used in all of this: the pagetable.
+
+A page table is a 1 page (remember, usually 4096 bytes) list of page table
+entries. In our system, we have 64 bit = 8 byte page table entries, hence we can fit
+4096/8 = 512 page table entries in one page.
+
+
+A page table entry is a pointer to another page with some extra metadata.
+We can see it as a 64 bit number which has the following format.
+
+$$
+\small
+\overset{\scriptstyle 63\,\cdots\,54}{\underset{\scriptstyle 10}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.5em}\text{Reserved}\hspace{0.5em}}}}\overset{\scriptstyle 53\,\cdots\,28}{\underset{\scriptstyle 26}{\boxed{\vphantom{\text{Ag[]}}\hspace{2.2em}\text{PPN[2]}\hspace{2.2em}}}}\overset{\scriptstyle 27\,\cdots\,19}{\underset{\scriptstyle 9}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.6em}\text{PPN[1]}\hspace{0.6em}}}}\overset{\scriptstyle 18\,\cdots\,10}{\underset{\scriptstyle 9}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.6em}\text{PPN[0]}\hspace{0.6em}}}}\overset{\scriptstyle 9\,\cdots\,8}{\underset{\scriptstyle 2}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.1em}\text{RSW}\hspace{0.1em}}}}\overset{\scriptstyle 7}{\underset{\scriptstyle 1}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.2em}\text{D}\hspace{0.2em}}}}\overset{\scriptstyle 6}{\underset{\scriptstyle 1}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.2em}\text{A}\hspace{0.2em}}}}\overset{\scriptstyle 5}{\underset{\scriptstyle 1}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.2em}\text{G}\hspace{0.2em}}}}\overset{\scriptstyle 4}{\underset{\scriptstyle 1}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.2em}\text{U}\hspace{0.2em}}}}\overset{\scriptstyle 3}{\underset{\scriptstyle 1}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.2em}\text{X}\hspace{0.2em}}}}\overset{\scriptstyle 2}{\underset{\scriptstyle 1}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.2em}\text{W}\hspace{0.2em}}}}\overset{\scriptstyle 1}{\underset{\scriptstyle 1}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.2em}\text{R}\hspace{0.2em}}}}\overset{\scriptstyle 0}{\underset{\scriptstyle 1}{\boxed{\vphantom{\text{Ag[]}}\hspace{0.2em}\text{V}\hspace{0.2em}}}}
+$$
+
+The final 8 bits are used as flags, for example the `R`, `W` and `X` bits
+specify if a page is readable, writable and executable. The `U` flag specifies
+if a page is owned by a user. User, supervisor and machine modes are out of
+scope for this article but it's worth knowing about the `U` flag. 
+
+Bits 53 through 10 are used for the PPN (physical page number). If we take `PPN
+<< 12` we get the physical starting address of this page in memory. Note that we
+left shift 12 since our pages are 4096 bytes and $\log_2$(4096) = 12. Hence 12
+bits for the byte offset which is truncated.
+
+In most diagrams explaining the page table entries, including this one,
+you will see that the PPN is split into three: `PPN[2]`, `PPN[1]` and `PPN[0]`. 
+This has to do with the idea of having "higher level leaves". I will expand upon
+this at the end of the article, but for simplicty we will consider the PPN
+as one contiguous number.
+
 
 ## The MMU's Walk
 
 As of now, we know two things: mappings are stored in memory, and we can tell
 the MMU where to start looking for the mappings through the `satp` register.
 Next, we are going to find out how the MMU takes the `PPN` bits stored in the
-`satp` register alongside a virtual address and finds the corresponding page table entry.
+`satp` register alongside a virtual address and finds the corresponding page
+table entry.
