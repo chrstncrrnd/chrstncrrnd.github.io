@@ -177,3 +177,49 @@ the MMU where to start looking for the mappings through the `satp` register.
 Next, we are going to find out how the MMU takes the `PPN` bits stored in the
 `satp` register alongside a virtual address and finds the corresponding page
 table entry.
+
+
+In order to see how the MMU uses the virtual address, we must first analyze 
+the structure of one such address. Remember, a virtual address in Sv39 is
+39 bits wide. The following is the structure of a virtual address in Sv39:
+$$
+\overset{\scriptstyle 38\,\cdots\,30}{\underset{\scriptstyle 9}{\boxed{\hspace{1em}\text{VPN[2]}\hspace{1em}}}}
+\overset{\scriptstyle 29\,\cdots\,21}{\underset{\scriptstyle 9}{\boxed{\hspace{1em}\text{VPN[1]}\hspace{1em}}}}
+\overset{\scriptstyle 20\,\cdots\,12}{\underset{\scriptstyle 9}{\boxed{\hspace{1em}\text{VPN[0]}\hspace{1em}}}}
+\overset{\scriptstyle 11\,\cdots\,0}{\underset{\scriptstyle 12}
+{\boxed{\hspace{2em}\text{page offset}\vphantom{\text{Ag[]}}\hspace{2em}}}}
+$$
+
+Where `VPN[n]` is the virtual page number at level `n`, and the page offset is simply
+the byte offset within the page.
+
+Using a virtual address, the MMU performs the following walk:
+
+1. Assign `root_table = satp.PPN`, where `satp.PPN` are the PPN bits of the
+  `satp` register, i.e. bits 43 through 0. This is an address in main memory containing
+  a pagetable.
+2. Index the pagetable at VPN[2]: `pte_l2 = root_table[VPN[2]]`. This page table
+   entry points to the next page table: `table_l2 = pte.PPN` (i.e. bits 53 through
+   10 of the page table entry).
+3. Repeat this indexing one level deeper: `pte_l1 = table_l2[VPN[1]]`. Once again update
+  table to the next level down: `table_l1 = pte.PPN`.
+4. Finally, `pte_l0 = table_l1[VPN[0]]`. The starting starting at
+   address `pte_l0.PPN << 12` contains our data! 
+5. So, all in all we obtain the address: `pte_l0.PPN << 12 | page_offset`, where
+   `page_offset` is the final 12 bits of the virtual address.
+
+
+That was a lot of information, let's look at it from a high level. What we are
+doing is over 3 iterations indexing a page table to find the page table entry to
+the next page. We can see this as indexing a 3d array using the values of
+`VPN[n]` somewhat akin to the following pseudo-C++:
+```c++
+constexpr page_size = 4096;
+constexpr n_ptes = page_size / 8; // 8 bytes per page table entry
+
+// ...
+
+uint64_t page_tables[n_ptes][n_ptes][n_ptes];
+uint64_t final_pte = page_tables[VPN[2]][VPN[1]][VPN[0]];
+uint64_t *page_base = static_cast<uint64_t*>(final_pte << 12);
+```
