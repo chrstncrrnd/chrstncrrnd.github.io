@@ -25,12 +25,12 @@ Virtual memory exists to solve two problems. Firstly, how do we stop two user
 programs from accessing each other's memory, and secondly, how can we run a
 program which doesn't fit entirely in the system's RAM.
 
-If two programs could access each other's memory, this would be terrible for
-security. A malicious program could read your passwords straight from your
-web browser's memory; one bad actor could compromise an entire system. A
-perfectly legitimate program could also accidentally overwrite another 
-program's information. Now one faulty program could cause a myriad of problems
-for everything else running on the same system.
+Two programs accessing each other's memory would be a serious security problem.
+A malicious program could read your passwords straight from your web browser's
+memory; one bad actor would compromise an entire system. A perfectly legitimate
+program could also accidentally overwrite another program's information. Now one
+faulty program could cause a myriad of problems for everything else running on
+the same system.
 
 For the second point, when we're actually running a program, we don't need it
 *all* in memory at once. We execute programs instruction-by-instruction, and the
