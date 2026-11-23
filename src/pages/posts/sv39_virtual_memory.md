@@ -315,18 +315,19 @@ and produce physical addresses to access memory.
 
 # 3 - Final Notes
 
-In the page tables section, I mentioned the concept of "higher order leaves". 
+In the page tables section, I mentioned the concept of "higher level leaves". 
 This is simply that in our tree we allow for leaves at shallower
 depths. This lets us map much larger areas of contiguous memory at once,
-sometimes referred to as "mega" and "giga" pages.
+sometimes referred to as "mega" and "giga" pages. Leaves in this case can be
+identified by having either one of the `R`, `W` or `X` set to 1.
 
 # 4 - Conclusion
 
-Whilst this article is very high level, I hope it helped you gain a deeper
-understanding of how paging works in real systems. Please feel free to use 
-any of the code here, most of it is from my personal OS project, which 
-you can find [here](https://github.com/chrstncrrnd/c_os). Specifically,
-most of the code comes from `kernel/paging.c`.
+While this article is very high level, I hope it helped build intuition for how
+paging works in real systems. Please feel free to use any of the code here, most
+of it is from my personal OS project, which you can find
+[here](https://github.com/chrstncrrnd/c_os). Specifically, most of the code
+comes from `kernel/paging.c`.
 
 I hope this was a fun read! If you have any feedback or questions,
 please do not hesitate to contact me.
