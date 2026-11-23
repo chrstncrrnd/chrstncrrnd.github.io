@@ -76,55 +76,45 @@ are 4096 bytes long. Then, we map 4096 virtual addresses starting at address V
 to the 4096 physical addresses in memory starting at P. RISC-V uses this 
 system for virtual memory.
 
-Some textbooks refer to the physical pages as "frames" in order to avoid 
-confusion. I will refer to both as pages.
-
+Note that some textbooks refer to the physical pages as "frames".
 
 # 2 - Virtual Memory in RISC-V
 
-In RISC-V, the CPU produces virtual addresses, the MMU, sitting between the CPU
-and Memory, translates those virtual addresses to physical addresses. We use paging
-for virtual memory in RISC-V.
+In RISC-V, the CPU produces virtual addresses. The MMU (memory management unit),
+sitting between the CPU and memory, is responsible for translating those virtual
+addresses to physical addresses. 
 
-A very fundamental question remains: how do we actually translate between virtual
+A fundamental question remains: how do we actually translate between virtual
 and physical memory addresses. So far we know that this process exists and we can use
-it to solve the aforementioned problems, but how does the MMU actually take a physical
-address and produce a virtual address? Who told it which maps to which?
+it to solve the aforementioned problems. But how does the MMU actually take a physical
+address and produce a virtual address? Who tells it which maps to which?
 
-An important consideration is that we want to be the ones to tell the MMU what the
-mappings are. We can imagine that if it did it automatically, suddenly we would loose
-a lot of control over this system and it would delegate too much complexity to the hardware.
+An important consideration is that we want to be the ones to tell the MMU *what*
+the mappings are. If it did it automatically, we would loose a lot of control
+over this system and too much complexity would be delegated to the hardware.
 
-Therefore, our job as the operating system, or any program which wants to
-implement virtual memory for itself, is to tell the MMU where to find the
-mappings. When we go to create a map between a virtual and physical page, 
-we must place it in the right spot in memory for the MMU to find it.
-
-For the MMU to find those mappings, we must tell it where to begin looking, we 
-do this via the `satp` register. It acts as a sort of interface for the the CPU 
-to "talk" to the MMU. 
-
+Therefore, our job is to tell the MMU what the mappings are and where to find them.
 
 ## The `satp` Register
 
 We use the `satp` register to tell the MMU where in memory to find our mappings.
-Since we are dealing with 64 bit RISC-V, it is a 64 bit register with the
-following fields: 
+It acts as an interface for the CPU to talk to the MMU. Since we are dealing with
+64 bit RISC-V, it is a 64 bit register with the following fields: 
 
 $$
-\overset{\scriptstyle 63\,\cdots\,60}{\underset{\scriptstyle 4}{\boxed{\hspace{0.6em}\text{MODE}\hspace{0.6em}}}}\overset{\scriptstyle 59\,\cdots\,44}{\underset{\scriptstyle 16}{\boxed{\hspace{3.4em}\text{ASID}\hspace{3.4em}}}}\overset{\scriptstyle 43\,\cdots\,0}{\underset{\scriptstyle 44}{\boxed{\hspace{8.6em}\text{PPN}\hspace{8.6em}}}}
+\overset{\scriptstyle 63\,\cdots\,60}{\underset{\scriptstyle 4}{\boxed{\hspace{0.6em}\text{MODE}\hspace{0.6em}}}}\overset{\scriptstyle 59\,\cdots\,44}{\underset{\scriptstyle 16}{\boxed{\hspace{3.4em}\text{ASID}\hspace{3.4em}}}}\overset{\scriptstyle 43\,\cdots\,0}{\underset{\scriptstyle 44}{\boxed{\hspace{6em}\text{PPN}\hspace{6em}}}}
 $$
 
 
-The `MODE` bits specify which mode to use i.e. Sv39, Sv48, Sv57, Sv64 or None.
+The `MODE` bits specify which mode to use, i.e. Sv39, Sv48, Sv57, Sv64 or none.
 The difference between the Sv modes is how many bits they support for virtual
-addresses, here we are using Sv39 which lets us access a $2^{39}$ byte = 512 GB
-address space. Of course, None implies that we don't use any form of virtual
+addresses. This article uses Sv39, which gives us a $2^{39}$ byte = 512 GB
+virtual address space. The none mode implies we don't use any form of virtual
 memory. This is the default mode.
 
 
-The `ASID` bits specify the address space identifier, for the purposes of this article I won't
-go into it.
+The `ASID` bits specify the address space identifier, this is out of scope for
+the purposes of this article.
 
 Finally, the `PPN` (physical page number) bits specify in which physical page
 the root page table is located. We will discover what a page table is in the next section.
@@ -139,28 +129,28 @@ static inline uint64_t pagetable_root_2_satp(uint64_t *page_table_root) {
 }
 ```
 
-And we can write to the register using the `csrw` instruction in assembly, where `a0` contains
-the value computed using the above function:
-```assembly
-  csrw  satp, a0
+The register is written to using the `csrw` instruction. The following is
+some assembly to do that, where `a0` contains the value computed using the above
+function: 
+```assembly 
+csrw satp, a0
 ```
 
-You can find out more in the RISC-V specification
+You can find out more about this register in the RISC-V specification
 [here](https://docs.riscv.org/reference/isa/v20260120/priv/supervisor.html#satp).
 
 
 ## Page tables
 
 Before we get to how to create mappings and how the MMU finds them, we must
-first define the basic data structure used in all of this: the page table.
+first define the basic data structure used: the page table.
 
-A page table is a 1 page (remember, usually 4096 bytes) list of page table
-entries. In our system, we have 64 bit = 8 byte page table entries, hence we can fit
-4096/8 = 512 page table entries in one page.
+A page table is a page filled with a list of page table entries. In our system,
+a page table entry is a 64 bit = 8 byte unsigned integer, hence we can fit 4096/8 = 512 page
+table entries in one page.
 
-
-A page table entry is a pointer to another page with some extra metadata.
-We can see it as a 64 bit number which has the following format.
+A page table entry is a pointer to a page with some extra metadata, the following is a
+diagram of the format:
 
 $$
 \small
@@ -168,19 +158,20 @@ $$
 $$
 
 The final 8 bits are used as flags, for example the `R`, `W` and `X` bits
-specify if a page is readable, writable and executable. The `U` flag specifies
-if a page is owned by a user. User, supervisor and machine modes are out of
-scope for this article but it's worth knowing about the `U` flag. 
+specify if a page is readable, writable or executable. The `V` flag indicates
+if the page table entry is valid, and the `U` flag indicates if the page
+is owned by a user.
 
-Bits 53 through 10 are used for the PPN (physical page number). If we take `PPN
-<< 12` we get the physical starting address of this page in memory. Note that we
-left shift 12 since our pages are 4096 bytes and $\log_2$(4096) = 12. Hence 12
-bits for the byte offset which is truncated.
+
+Bits 53 through 10 are used for the PPN (physical page number) of the page we
+are pointing to. Taking `PPN << 12` we get the physical starting address of the
+page in memory. Note that the left shift is of 12 bits since our pages are 4096
+bytes long and $\log_2$(4096) = 12. Hence 12 bits are used for the byte offset.
 
 In most diagrams explaining the page table entries, including this one,
 you will see that the PPN is split into three: `PPN[2]`, `PPN[1]` and `PPN[0]`. 
-This has to do with the idea of having "higher level leaves". I will expand upon
-this at the end of the article, but for simplicty we will consider the PPN
+This has to do with the idea of "higher level leaves". I will expand upon
+this at the end of the article, for now we consider the PPN
 as one contiguous number.
 
 
@@ -190,12 +181,13 @@ As of now, we know two things: mappings are stored in memory, and we can tell
 the MMU where to start looking for the mappings through the `satp` register.
 Next, we are going to find out how the MMU takes the `PPN` bits stored in the
 `satp` register alongside a virtual address and finds the corresponding page
-table entry.
+table entry which contains the starting physical page number of the corresponding 
+physical address.
 
 
-In order to see how the MMU uses the virtual address, we must first analyze 
+In order to see how the MMU uses a virtual address, we must first analyze 
 the structure of one such address. Remember, a virtual address in Sv39 is
-39 bits wide. The following is the structure of a virtual address in Sv39:
+39 bits wide.
 $$
 \overset{\scriptstyle 38\,\cdots\,30}{\underset{\scriptstyle 9}{\boxed{\hspace{1em}\text{VPN[2]}\hspace{1em}}}}
 \overset{\scriptstyle 29\,\cdots\,21}{\underset{\scriptstyle 9}{\boxed{\hspace{1em}\text{VPN[1]}\hspace{1em}}}}
@@ -204,38 +196,41 @@ $$
 {\boxed{\hspace{2em}\text{page offset}\vphantom{\text{Ag[]}}\hspace{2em}}}}
 $$
 
-Where `VPN[n]` is the virtual page number at level `n`, and the page offset is simply
-the byte offset within the page.
+`VPN[n]` is the virtual page number at level `n`, the page offset is simply the
+byte offset within the page.
 
 Using a virtual address, the MMU performs the following walk:
 
 1. Assign `root_table = satp.PPN << 12`, where `satp.PPN` are the PPN bits of the
   `satp` register, i.e. bits 43 through 0. This is an address in main memory containing
   a page table.
-2. Index the page table at VPN[2]: `pte_l2 = root_table[VPN[2]]`. This page table
-   entry points to the next page table: `table_l2 = pte.PPN << 12` (i.e. bits 53 through
-   10 of the page table entry).
-3. Repeat this indexing one level deeper: `pte_l1 = table_l2[VPN[1]]`. Once again update
-  table to the next level down: `table_l1 = pte.PPN << 12`.
-4. Finally, `pte_l0 = table_l1[VPN[0]]`. The page starting at
+2. Index the page table at `VPN[2]`: `pte_l2 = root_table[VPN[2]]`. This page table
+   entry points to the next page table: `table_l2 = pte_l2.PPN << 12` (i.e. bits 53 through
+   10 of the `pte_l2` page table entry).
+3. Repeat this indexing one level deeper: `pte_l1 = table_l2[VPN[1]]`. Once again find the
+  table one level down: `table_l1 = pte.PPN << 12`.
+4. Finally, let `pte_l0 = table_l1[VPN[0]]`. The page starting at
    address `pte_l0.PPN << 12` contains our data!
-5. So, all in all we obtain the address: `pte_l0.PPN << 12 | page_offset`, where
-   `page_offset` is the final 12 bits of the virtual address.
+
+All in all we obtain the final physical address: `pte_l0.PPN << 12 | page_offset`, where
+`page_offset` is the lowest 12 bits of the virtual address. Return this address.
 
 
 That was a lot of information, let's look at it from a high level. What we are
-doing is over 3 iterations indexing a page table to find the page table entry to
-the next page. We can see this as a tree with depth 3 and branching factor 512.
-At each iteration, we look at the current node (page table) and choose the
-correponding branch depending on `VPN[n]`. Once we reach a leaf at depth 3, we
-know that the page our pte is pointing to is the one containing our data.
+doing is: over 3 iterations indexing a page table to obtain the page table entry to
+the next page. The next page is a page table, if we are at levels 2 or 1, and a the
+actual phyisical page if we are at level 0. We can see this as a tree with depth 3 and 
+branching factor 512. At each iteration, we look at the current node (page table) and choose the
+correponding branch depending on `VPN[n]`. Once we reach a leaf, at depth 3, we
+know the page our pte is pointing to is the one containing our data. To compute the physical
+address, sum the page offset from the virtual address to `pte_l0.PPN << 12`.
 
-This is the walk the MMU performs to translate a virtual address to a physical
-address. Since accessing memory is costly, the MMU usually uses something
-called the TLB (translation lookaside buffer) which caches translations to 
-avoid having to go to memory all the time.
+The MMU performs this walk for translation. Since accessing memory is costly,
+the MMU usually uses something called the TLB (translation lookaside buffer).
+The TLB caches translations so the MMU can avoid performing this walk on every
+memory access.
 
-A simple implmentation of this walk in C is the following:
+The following is a simple implementation of this walk in C:
 
 ```c
 // paddr_t is the type for a physical address, and vaddr_t is the type for a virtual address
@@ -260,13 +255,13 @@ paddr_t walk(uint64_t *root_table, vaddr_t vaddr) {
 
 ## Storing Mappings
 
-Now that we know how the MMU translates addresses, we can easily figure out 
-how we must store our mappings such that the MMU can find them.
+Now that we know how the MMU translates addresses by using our mappings,
+we can easily figure out where and how to store them.
 
 The process of mapping a page is almost identical to the walk the MMU performs.
-The difference is that if a branch on our tree does not exist, we must creat it 
-by allocated a new node and then updating the parent's page table. It's also
-important to note that our `walk` function translated a virtual **address** to a physical
+The difference being if a branch on our tree does not exist, we must create it 
+by allocating a new node and updating the parent's page table. It's also
+important to note that our `walk` function translates a virtual **address** to a physical
 one, whilst our `map_page` function will create the mapping between a physical **page number** 
 and a virtual one. Since we are using paging, we can't map individual addresses.
 
