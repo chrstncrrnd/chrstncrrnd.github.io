@@ -27,7 +27,7 @@ program which doesn't fit entirely in the system's RAM.
 
 If two programs could access each other's memory, this would be terrible for
 security. A malicious program could read your passwords straight from your
-web browser's memory, one bad actor could compromise an entire system. A
+web browser's memory; one bad actor could compromise an entire system. A
 perfectly legitimate program could also accidentally overwrite another 
 program's information. Now one faulty program could cause a myriad of problems
 for everything else running on the same system.
@@ -36,7 +36,7 @@ For the second point, when we're actually running a program, we don't need it
 *all* in memory at once. We execute programs instruction-by-instruction, and the
 only information the CPU needs immediately is that stored in memory. As far as
 the CPU is concerned, it doesn't care if the entirety of the program is stored
-in RAM. It only needs to recieve the correct information when requested.
+in RAM. It only needs to receive the correct information when requested.
 In fact, many lines of code will go without executing and plenty of assets will
 never be rendered.
 
@@ -44,9 +44,9 @@ never be rendered.
 
 Virtual memory is a "fake" view of memory we show to a program. This view of
 memory is isolated from all other programs and can be as large as the address
-space permimts.
+space permits.
 
-Through the this fake (or rather, virtual) view, the program can see and access only
+Through this fake (or rather, virtual) view, the program can see and access only
 the data belonging to it. This view is $2^n$ bytes large, where n is the number of bits
 in our virtual memory address. In Sv39, n = 39 (that's where the 39 comes from!)
 
@@ -54,12 +54,12 @@ When a program requests data from memory, we translate its virtual address which
 refers to memory in its virtual view, to a physical address; one we can use to 
 index RAM.
 
-## What is paging?
+## What is Paging?
 
 Paging is a way of implementing virtual memory.
 
-When translating virtual to phyisical addresses, we need to store these
-translations (or as I will refer to them as, maps) somewhere in memory.
+When translating virtual to physical addresses, we need to store these
+translations (which I'll call maps) somewhere in memory.
 If we stored these maps for every translation pair, we would end up consuming
 more memory on the mapping than the data itself. Hence we store translation chunks.
 
@@ -86,11 +86,11 @@ addresses to physical addresses.
 
 A fundamental question remains: how do we actually translate between virtual
 and physical memory addresses. So far we know that this process exists and we can use
-it to solve the aforementioned problems. But how does the MMU actually take a physical
-address and produce a virtual address? Who tells it which maps to which?
+it to solve the aforementioned problems. But how does the MMU actually take a virtual
+address and produce a physical address? Who tells it which maps to which?
 
 An important consideration is that we want to be the ones to tell the MMU *what*
-the mappings are. If it did it automatically, we would loose a lot of control
+the mappings are. If it did it automatically, we would lose a lot of control
 over this system and too much complexity would be delegated to the hardware.
 
 Therefore, our job is to tell the MMU what the mappings are and where to find them.
@@ -108,7 +108,7 @@ $$
 
 The `MODE` bits specify which mode to use, i.e. Sv39, Sv48, Sv57, Sv64 or none.
 The difference between the Sv modes is how many bits they support for virtual
-addresses. This article uses Sv39, which gives us a $2^{39}$ byte = 512 GB
+addresses. This article uses Sv39, which gives us a $2^{39}$ byte = 512 GiB
 virtual address space. The none mode implies we don't use any form of virtual
 memory. This is the default mode.
 
@@ -134,6 +134,7 @@ some assembly to do that, where `a0` contains the value computed using the above
 function: 
 ```assembly 
 csrw satp, a0
+sfence.vma zero, zero # Flush the TLB
 ```
 
 You can find out more about this register in the RISC-V specification
@@ -160,7 +161,7 @@ $$
 The final 8 bits are used as flags, for example the `R`, `W` and `X` bits
 specify if a page is readable, writable or executable. The `V` flag indicates
 if the page table entry is valid, and the `U` flag indicates if the page
-is owned by a user.
+is accessible from user mode.
 
 
 Bits 53 through 10 are used for the PPN (physical page number) of the page we
@@ -208,7 +209,7 @@ Using a virtual address, the MMU performs the following walk:
    entry points to the next page table: `table_l2 = pte_l2.PPN << 12` (i.e. bits 53 through
    10 of the `pte_l2` page table entry).
 3. Repeat this indexing one level deeper: `pte_l1 = table_l2[VPN[1]]`. Once again find the
-  table one level down: `table_l1 = pte.PPN << 12`.
+  table one level down: `table_l1 = pte_l1.PPN << 12`.
 4. Finally, let `pte_l0 = table_l1[VPN[0]]`. The page starting at
    address `pte_l0.PPN << 12` contains our data!
 
@@ -219,9 +220,9 @@ All in all we obtain the final physical address: `pte_l0.PPN << 12 | page_offset
 That was a lot of information, let's look at it from a high level. What we are
 doing is: over 3 iterations indexing a page table to obtain the page table entry to
 the next page. The next page is a page table, if we are at levels 2 or 1, and a the
-actual phyisical page if we are at level 0. We can see this as a tree with depth 3 and 
+actual physical page if we are at level 0. We can see this as a tree with depth 3 and 
 branching factor 512. At each iteration, we look at the current node (page table) and choose the
-correponding branch depending on `VPN[n]`. Once we reach a leaf, at depth 3, we
+corresponding branch depending on `VPN[n]`. Once we reach a leaf, at depth 3, we
 know the page our pte is pointing to is the one containing our data. To compute the physical
 address, sum the page offset from the virtual address to `pte_l0.PPN << 12`.
 
@@ -234,8 +235,8 @@ The following is a simple implementation of this walk in C:
 
 ```c
 // paddr_t is the type for a physical address, and vaddr_t is the type for a virtual address
-typedef uint64_t* paddr_t;
-typedef uint64_t* vaddr_t;
+typedef uint64_t paddr_t;
+typedef uint64_t vaddr_t;
 // ...
 paddr_t walk(uint64_t *root_table, vaddr_t vaddr) {
   uint64_t *table = root_table;
@@ -259,7 +260,7 @@ Now that we know how the MMU translates addresses by using our mappings,
 we can easily figure out where and how to store them.
 
 The process of mapping a page is almost identical to the walk the MMU performs.
-The difference being if a branch on our tree does not exist, we must create it 
+The difference is that if a branch on our tree does not exist, we must create it 
 by allocating a new node and updating the parent's page table. It's also
 important to note that our `walk` function translates a virtual **address** to a physical
 one, whilst our `map_page` function will create the mapping between a physical **page number** 
@@ -286,7 +287,7 @@ void map_page(uint64_t *root_table, vaddr_t vaddr, paddr_t paddr,
     if (!(pte & PTE_V)) {
       // allocate a new page
       paddr_t new_page = alloc_zeroed_page();
-      pte = ((new_page >> 12) << 10) | PTE_V;;
+      pte = ((new_page >> 12) << 10) | PTE_V;
       // write our new page table entry
       table[page_number] = pte;
       table = (uint64_t *)new_page;
@@ -298,9 +299,9 @@ void map_page(uint64_t *root_table, vaddr_t vaddr, paddr_t paddr,
   // finally, write our pte to the lowest level
   uint64_t page_number = (vaddr >> 12) & 0x1FF;
   if (table[page_number] & PTE_V) {
-    panic("Tried to map the same physical address to two virtual addresses!");
+    panic("Tried to remap an already mapped virtual page!");
   }
-  table[page_number] = ((pte >> 10) & ((1ULL << 44) - 1)) << 12 | flags;
+  table[page_number] = ((paddr >> 12) << 10) | flags | PTE_V;
 }
 ```
 
@@ -312,8 +313,8 @@ and produce physical addresses to access memory.
 
 In the page tables section, I mentioned the concept of "higher order leaves". 
 This is simply that in our tree we allow for leaves at shallower
-depths. This lets us map much larger areas of contiguous memory at once
-sometimes refered to as "mega" and "giga" pages.
+depths. This lets us map much larger areas of contiguous memory at once,
+sometimes referred to as "mega" and "giga" pages.
 
 # 4 - Conclusion
 
