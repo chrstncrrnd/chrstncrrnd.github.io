@@ -195,31 +195,102 @@ the byte offset within the page.
 
 Using a virtual address, the MMU performs the following walk:
 
-1. Assign `root_table = satp.PPN`, where `satp.PPN` are the PPN bits of the
+1. Assign `root_table = satp.PPN << 12`, where `satp.PPN` are the PPN bits of the
   `satp` register, i.e. bits 43 through 0. This is an address in main memory containing
   a pagetable.
 2. Index the pagetable at VPN[2]: `pte_l2 = root_table[VPN[2]]`. This page table
-   entry points to the next page table: `table_l2 = pte.PPN` (i.e. bits 53 through
+   entry points to the next page table: `table_l2 = pte.PPN << 12` (i.e. bits 53 through
    10 of the page table entry).
 3. Repeat this indexing one level deeper: `pte_l1 = table_l2[VPN[1]]`. Once again update
-  table to the next level down: `table_l1 = pte.PPN`.
-4. Finally, `pte_l0 = table_l1[VPN[0]]`. The starting starting at
-   address `pte_l0.PPN << 12` contains our data! 
+  table to the next level down: `table_l1 = pte.PPN << 12`.
+4. Finally, `pte_l0 = table_l1[VPN[0]]`. The page starting at
+   address `pte_l0.PPN << 12` contains our data!
 5. So, all in all we obtain the address: `pte_l0.PPN << 12 | page_offset`, where
    `page_offset` is the final 12 bits of the virtual address.
 
 
 That was a lot of information, let's look at it from a high level. What we are
 doing is over 3 iterations indexing a page table to find the page table entry to
-the next page. We can see this as indexing a 3d array using the values of
-`VPN[n]` somewhat akin to the following pseudo-C++:
-```c++
-constexpr page_size = 4096;
-constexpr n_ptes = page_size / 8; // 8 bytes per page table entry
+the next page. We can see this as a tree with depth 3 and branching factor 512.
+At each iteration, we look at the current node (pagetable) and choose the
+correponding branch depending on `VPN[n]`. Once we reach a leaf at depth 3, we
+know that the page our pte is pointing to is the one containing our data.
 
+This is the walk the MMU performs to translate a virtual address to a physical
+address. Since accessing memory is costly, the MMU usually uses something
+called the TLB (translation lookaside buffer) which caches translations to 
+avoid having to go to memory all the time.
+
+A simple implmentation of this walk in C is the following:
+
+```c
+// paddr_t is the type for a physical address, and vaddr_t is the type for a virtual address
+typedef uint64_t* paddr_t;
+typedef uint64_t* vaddr_t;
 // ...
+paddr_t walk(uint64_t *root_table, vaddr_t vaddr) {
+  uint64_t *table = root_table;
+  for (size_t level = 2; level > 0; --level) {
+    // compute the corresponding VPN[level]
+    uint64_t page_number = (vaddr >> (12 + 9 * level)) & 0x1FF;
+    uint64_t pte = table[page_number];
+    // go one level deeper
+    table = (uint64_t *)(((pte >> 10) & ((1ULL << 44) - 1)) << 12);
+  }
+  uint64_t page_number = (vaddr >> 12) & 0x1FF;
+  // last 12 bits 
+  uint64_t page_offset = vaddr & 0xFFF;
+  return (table[page_number] >> 10) << 12 | page_offset;
+}
+```
 
-uint64_t page_tables[n_ptes][n_ptes][n_ptes];
-uint64_t final_pte = page_tables[VPN[2]][VPN[1]][VPN[0]];
-uint64_t *page_base = static_cast<uint64_t*>(final_pte << 12);
+## Storing Mappings
+
+Now that we know how the MMU translates addresses, we can easily figure out 
+how we must store our mappings such that the MMU can find them.
+
+The process of mapping a page is almost identical to the walk the MMU performs.
+The difference is that if a branch on our tree does not exist, we must creat it 
+by allocated a new node and then updating the parent's page table. It's also
+important to note that our `walk` function translated a virtual **address** to a physical
+one, whilst our `map_page` function will create the mapping between a physical **page number** 
+and a virtual one. Since we are using paging, we can't map individual addresses.
+
+Once we reach a leaf, we simply write to it a page table entry whose PPN is that of 
+the physical page we are mapping.
+
+The following is a simple implementation in C:
+
+```c
+void map_page(uint64_t *root_table, vaddr_t vaddr, paddr_t paddr,
+              uint64_t flags) {
+  // we are mapping between pages, hence both the virtual address and physical address
+  // must be aligned to the page size
+  if (!(is_aligned(vaddr, PAGE_SIZE) && is_aligned(paddr, PAGE_SIZE))) {
+    panic("Tried to map an unaligned page!");
+  }
+  uint64_t *table = root_table;
+  for (size_t level = 2; level > 0; --level) {
+    uint64_t page_number = (vaddr >> (12 + 9 * level)) & 0x1FF;
+    uint64_t pte = table[page_number];
+    // we don't have a valid page table entry, we must create it
+    if (!(pte & PTE_V)) {
+      // allocate a new page
+      paddr_t new_page = alloc_zeroed_page();
+      pte = ((new_page >> 12) << 10) | PTE_V;;
+      // write our new page table entry
+      table[page_number] = pte;
+      table = (uint64_t *)new_page;
+      continue;
+    }
+    // go one level deeper
+    table = (uint64_t *)(((pte >> 10) & ((1ULL << 44) - 1)) << 12);
+  }
+  // finally, write our pte to the lowest level
+  uint64_t page_number = (vaddr >> 12) & 0x1FF;
+  if (table[page_number] & PTE_V) {
+    panic("Tried to map the same physical address to two virtual addresses!");
+  }
+  table[page_number] = ((pte >> 10) & ((1ULL << 44) - 1)) << 12 | flags;
+}
 ```
