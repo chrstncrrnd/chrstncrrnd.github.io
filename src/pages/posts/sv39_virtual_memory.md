@@ -130,15 +130,20 @@ static inline uint64_t pagetable_root_2_satp(uint64_t *page_table_root) {
 }
 ```
 
-This is a really breif summary. If you wish to find out more, you can read the
-actual RISC-V specification
+And we can write to the register using the `csrw` instruction in assembly, where `a0` contains
+the value computed using the above function:
+```assembly
+  csrw  satp, a0
+```
+
+You can find out more in the RISC-V specification
 [here](https://docs.riscv.org/reference/isa/v20260120/priv/supervisor.html#satp).
 
 
-## Pagetables
+## Page tables
 
 Before we get to how to create mappings and how the MMU finds them, we must
-first define the basic data structure used in all of this: the pagetable.
+first define the basic data structure used in all of this: the page table.
 
 A page table is a 1 page (remember, usually 4096 bytes) list of page table
 entries. In our system, we have 64 bit = 8 byte page table entries, hence we can fit
@@ -197,8 +202,8 @@ Using a virtual address, the MMU performs the following walk:
 
 1. Assign `root_table = satp.PPN << 12`, where `satp.PPN` are the PPN bits of the
   `satp` register, i.e. bits 43 through 0. This is an address in main memory containing
-  a pagetable.
-2. Index the pagetable at VPN[2]: `pte_l2 = root_table[VPN[2]]`. This page table
+  a page table.
+2. Index the page table at VPN[2]: `pte_l2 = root_table[VPN[2]]`. This page table
    entry points to the next page table: `table_l2 = pte.PPN << 12` (i.e. bits 53 through
    10 of the page table entry).
 3. Repeat this indexing one level deeper: `pte_l1 = table_l2[VPN[1]]`. Once again update
@@ -212,7 +217,7 @@ Using a virtual address, the MMU performs the following walk:
 That was a lot of information, let's look at it from a high level. What we are
 doing is over 3 iterations indexing a page table to find the page table entry to
 the next page. We can see this as a tree with depth 3 and branching factor 512.
-At each iteration, we look at the current node (pagetable) and choose the
+At each iteration, we look at the current node (page table) and choose the
 correponding branch depending on `VPN[n]`. Once we reach a leaf at depth 3, we
 know that the page our pte is pointing to is the one containing our data.
 
@@ -294,3 +299,10 @@ void map_page(uint64_t *root_table, vaddr_t vaddr, paddr_t paddr,
   table[page_number] = ((pte >> 10) & ((1ULL << 44) - 1)) << 12 | flags;
 }
 ```
+
+And that's it! By storing mappings in this way and passing the root page table to the `satp` register,
+the MMU can take the CPU's generated virtual addresses and produce physical addresses to access memory.
+
+# 3 - Conclusion
+
+We've seen 3 processes,
