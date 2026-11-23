@@ -2,13 +2,8 @@
 layout: ../../layouts/PostLayout.astro
 title: "Sv39 Virtual Memory Explained"
 description: "An introduction to RISC-V's Sv39 virtual memory system."
-<<<<<<< Updated upstream
-creation: "22 November 2026"
-latest_edit: "22 November 2026"
-=======
 creation: "23 November 2026"
 latest_edit: "23 November 2026"
->>>>>>> Stashed changes
 tags:
   - "RISC-V"
   - "C"
@@ -16,14 +11,6 @@ tags:
   - "Virtual Memory"
 ---
 
-<<<<<<< Updated upstream
-# Introduction 
-
-In this article I will go over the basics of how Sv39 (and similar virtual
-memory systems) in RISC-V work, why they exist and what a simple implementation
-could look like. I won't dive too deep into specifics, the main point of this
-article is to gain intuition for how this system works.
-=======
 # Introduction
 
 In this article I will go over the basics of how Sv39 (and similar virtual
@@ -31,35 +18,17 @@ memory systems) in RISC-V work, why they exist and what a simple implementation
 could look like. The goal of this article is intuition rather than completeness,
 so I deliberately omit certain details for the sake of simplicity. You should be
 comfortable with C and with binary and hexadecimal; no OS background is needed. 
->>>>>>> Stashed changes
 
 # 1 - Basics
 ## Why do we Need Virtual Memory?
 
-<<<<<<< Updated upstream
-Virtual memory exists to solve two problems. Firstly, how do we stop two user
-=======
 Virtual memory is motivated by two main problems. Firstly, how do we stop two user
->>>>>>> Stashed changes
 programs from accessing each other's memory, and secondly, how can we run a
 program which doesn't fit entirely in the system's RAM.
 
 Two programs accessing each other's memory would be a serious security problem.
 A malicious program could read your passwords straight from your web browser's
 memory; one bad actor would compromise an entire system. A perfectly legitimate
-<<<<<<< Updated upstream
-program could also accidentally overwrite another program's information. Now one
-faulty program could cause a myriad of problems for everything else running on
-the same system.
-
-For the second point, when we're actually running a program, we don't need it
-*all* in memory at once. We execute programs instruction-by-instruction, and the
-only information the CPU needs immediately is that stored in memory. As far as
-the CPU is concerned, it doesn't care if the entirety of the program is stored
-in RAM. It only needs to receive the correct information when requested.
-In fact, many lines of code will go without executing and plenty of assets will
-never be rendered.
-=======
 program could also accidentally overwrite another program. Now one faulty
 program could cause a myriad of problems for everything else running on the same
 system.
@@ -72,7 +41,6 @@ entirety of the program is stored in RAM. It only needs to receive the correct
 information when requested. In fact, in almost all program executions, many
 lines of code will go without executing and plenty of assets will never be
 rendered.
->>>>>>> Stashed changes
 
 ## So, What is Virtual Memory?
 
@@ -97,15 +65,6 @@ translations (which I'll call maps) somewhere in memory.
 If we stored these maps for every translation pair, we would end up consuming
 more memory on the mapping than the data itself. Hence we store translation chunks.
 
-<<<<<<< Updated upstream
-A chunk is defined by a starting address and a length. All virtual addresses
-which map to the same chunk have physical addresses which only differ in the
-offset in that chunk.
-
-However, variable length chunks carry the problem of finding a free space
-large enough for them in memory. So instead, we consider only fixed size chunks.
-This is paging, our system of chunks but of the fixed size: 4096 bytes.
-=======
 A chunk is defined by a starting address and a length. Every address inside a
 chunk is translated using the same mapping, just shifted by its offset within
 the chunk.
@@ -114,7 +73,6 @@ However, variable length chunks carry the problem of finding a free space large
 enough for them in memory -- this is called external fragmentation. Instead,
 we consider only fixed size chunks. This is paging: our system of chunks but of
 the fixed size: 4096 bytes.
->>>>>>> Stashed changes
 
 We break up the virtual and physical memory space into blocks, or pages, which
 are 4096 bytes long. Then, we map 4096 virtual addresses starting at address V
@@ -130,11 +88,7 @@ sitting between the CPU and memory, is responsible for translating those virtual
 addresses to physical addresses. 
 
 A fundamental question remains: how do we actually translate between virtual
-<<<<<<< Updated upstream
-and physical memory addresses. So far we know that this process exists and we can use
-=======
 and physical memory addresses? So far we know that this process exists and we can use
->>>>>>> Stashed changes
 it to solve the aforementioned problems. But how does the MMU actually take a virtual
 address and produce a physical address? Who tells it which maps to which?
 
@@ -155,16 +109,6 @@ $$
 $$
 
 
-<<<<<<< Updated upstream
-The `MODE` bits specify which mode to use, i.e. Sv39, Sv48, Sv57, Sv64 or none.
-The difference between the Sv modes is how many bits they support for virtual
-addresses. This article uses Sv39, which gives us a $2^{39}$ byte = 512 GiB
-virtual address space. The none mode implies we don't use any form of virtual
-memory. This is the default mode.
-
-
-The `ASID` bits specify the address space identifier, this is out of scope for
-=======
 The `MODE` bits specify which mode to use, e.g. Sv39, Sv48, Sv57 or bare.
 The difference between the Sv modes is how many bits they support for virtual
 addresses. This article uses Sv39, which gives us a $2^{39}$ byte = 512 GiB
@@ -173,7 +117,6 @@ memory. This is the default mode.
 
 
 The `ASID` bits specify the address space identifier. This is out of scope for
->>>>>>> Stashed changes
 the purposes of this article.
 
 Finally, the `PPN` (physical page number) bits specify in which physical page
@@ -184,11 +127,7 @@ We can use a function like this to compute the value to write to the `satp` regi
 #define SATP_SV39_MODE (8ULL << 60)
 
 // Note that `page_table_root` must be aligned to the page size.
-<<<<<<< Updated upstream
-static inline uint64_t pagetable_root_2_satp(uint64_t *page_table_root) {
-=======
 static inline uint64_t pagetable_root_2_satp(uint64_t page_table_root) {
->>>>>>> Stashed changes
   return (SATP_SV39_MODE | (page_table_root >> 12));
 }
 ```
@@ -261,11 +200,7 @@ $$
 {\boxed{\hspace{2em}\text{page offset}\vphantom{\text{Ag[]}}\hspace{2em}}}}
 $$
 
-<<<<<<< Updated upstream
-`VPN[n]` is the virtual page number at level `n`, the page offset is simply the
-=======
 `VPN[n]` is the virtual page number at level `n`. The page offset is the
->>>>>>> Stashed changes
 byte offset within the page.
 
 Using a virtual address, the MMU performs the following walk:
@@ -285,16 +220,6 @@ All in all we obtain the final physical address: `pte_l0.PPN << 12 | page_offset
 `page_offset` is the lowest 12 bits of the virtual address. Return this address.
 
 
-<<<<<<< Updated upstream
-That was a lot of information, let's look at it from a high level. What we are
-doing is: over 3 iterations indexing a page table to obtain the page table entry to
-the next page. The next page is a page table, if we are at levels 2 or 1, and a the
-actual physical page if we are at level 0. We can see this as a tree with depth 3 and 
-branching factor 512. At each iteration, we look at the current node (page table) and choose the
-corresponding branch depending on `VPN[n]`. Once we reach a leaf, at depth 3, we
-know the page our pte is pointing to is the one containing our data. To compute the physical
-address, sum the page offset from the virtual address to `pte_l0.PPN << 12`.
-=======
 That was a lot of information; let's look at it from a high level. Over 3
 iterations, we are indexing a page table to obtain the page table entry to the
 next page. The next page is a page table, if we are at levels 2 or 1, and the
@@ -304,7 +229,6 @@ actual physical page if we are at level 0. We can see this as a tree with depth
 reach a leaf, at depth 3, we know the page our pte is pointing to is the one
 containing our data. To compute the physical address, sum the page offset from
 the virtual address to `pte_l0.PPN << 12`.
->>>>>>> Stashed changes
 
 The MMU performs this walk for translation. Since accessing memory is costly,
 the MMU usually uses something called the TLB (translation lookaside buffer).
@@ -330,32 +254,20 @@ paddr_t walk(uint64_t *root_table, vaddr_t vaddr) {
   uint64_t page_number = (vaddr >> 12) & 0x1FF;
   // last 12 bits 
   uint64_t page_offset = vaddr & 0xFFF;
-<<<<<<< Updated upstream
-  return (table[page_number] >> 10) << 12 | page_offset;
-=======
   return ((table[page_number] >> 10) & ((1ULL << 44) - 1)) << 12 | page_offset;
->>>>>>> Stashed changes
 }
 ```
 
 ## Storing Mappings
 
 Now that we know how the MMU translates addresses by using our mappings,
-<<<<<<< Updated upstream
-we can easily figure out where and how to store them.
-=======
 we can figure out where and how to store them.
->>>>>>> Stashed changes
 
 The process of mapping a page is almost identical to the walk the MMU performs.
 The difference is that if a branch on our tree does not exist, we must create it 
 by allocating a new node and updating the parent's page table. It's also
 important to note that our `walk` function translates a virtual **address** to a physical
-<<<<<<< Updated upstream
-one, whilst our `map_page` function will create the mapping between a physical **page number** 
-=======
 one, while our `map_page` function will create the mapping between a physical **page number** 
->>>>>>> Stashed changes
 and a virtual one. Since we are using paging, we can't map individual addresses.
 
 Once we reach a leaf, we simply write to it a page table entry whose PPN is that of 
@@ -403,7 +315,6 @@ and produce physical addresses to access memory.
 
 # 3 - Final Notes
 
-<<<<<<< Updated upstream
 In the page tables section, I mentioned the concept of "higher order leaves". 
 This is simply that in our tree we allow for leaves at shallower
 depths. This lets us map much larger areas of contiguous memory at once,
@@ -416,22 +327,6 @@ understanding of how paging works in real systems. Please feel free to use
 any of the code here, most of it is from my personal OS project, which 
 you can find [here](https://github.com/chrstncrrnd/c_os). Specifically,
 most of the code comes from `kernel/paging.c`.
-=======
-In the page tables section, I mentioned the concept of "higher level leaves". 
-This is simply that in our tree we allow for leaves at shallower
-depths. This lets us map much larger areas of contiguous memory at once,
-sometimes referred to as "mega" and "giga" pages. Leaves in this case can be
-identified by having either one of the `R`, `W` or `X` set to 1.
-
-# 4 - Conclusion
-
-While this article is very high level, I hope it helped build intuition for how
-paging works in real systems. Please feel free to use any of the code here, most
-of it is from my personal OS project, which you can find
-[here](https://github.com/chrstncrrnd/c_os). Specifically, most of the code
-comes from `kernel/paging.c`.
->>>>>>> Stashed changes
-
 
 I hope this was a fun read! If you have any feedback or questions,
 please do not hesitate to contact me.
