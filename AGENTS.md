@@ -60,6 +60,8 @@ Use a human-readable date compatible with `Date.parse` for `creation`, because
 `PostList.astro` sorts newest first using that value. Keep tags as a YAML list
 of strings. The post layout renders the title, creation date, and an updated
 date only when it differs from creation. Math is available in Markdown.
+Place `<!-- toc -->` on its own line wherever a collapsed, expandable table of
+contents should appear; posts without the marker omit it.
 
 The post list builds each link from the Markdown filename, displays optional
 description/tags, and accepts an optional `limit` prop. The homepage uses

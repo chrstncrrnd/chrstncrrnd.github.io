@@ -19,6 +19,8 @@ could look like. The goal of this article is intuition rather than completeness,
 so I deliberately omit certain details for the sake of simplicity. You should be
 comfortable with C and with binary and hexadecimal; no OS background is needed. 
 
+<!-- toc -->
+
 # 1 - Basics
 ## Why do we Need Virtual Memory?
 
