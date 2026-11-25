@@ -13,6 +13,11 @@ const year = new Date().getFullYear();
         justify-content: space-between;
     }
 
+    .social-links {
+        display: flex;
+        gap: 1rem;
+    }
+
     .sep {
         border: 0;
         border-top: 1px solid var(--divider-color);
@@ -41,6 +46,9 @@ const year = new Date().getFullYear();
     <hr class="sep" />
     <div class="footer-content">
         <p>&copy; {year} chrstncrrnd</p>
-        <a href="https://github.com/chrstncrrnd">GitHub</a>
+        <div class="social-links">
+            <a href="https://github.com/chrstncrrnd">GitHub</a>
+            <a href="https://www.linkedin.com/in/christian-corradini/">LinkedIn</a>
+        </div>
     </div>
 </footer>
