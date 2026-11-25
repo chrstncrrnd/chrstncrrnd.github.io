@@ -59,13 +59,20 @@ const { title } = Astro.props;
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <title>{title}</title>
         <script is:inline>
+            let storedTheme = null;
             try {
-                const theme = localStorage.getItem("theme");
-                document.documentElement.dataset.theme =
-                    theme === "dark" ? "dark" : "light";
-            } catch {
-                document.documentElement.dataset.theme = "light";
-            }
+                storedTheme = localStorage.getItem("theme");
+            } catch {}
+
+            const systemTheme = window.matchMedia(
+                "(prefers-color-scheme: dark)",
+            ).matches
+                ? "dark"
+                : "light";
+            document.documentElement.dataset.theme =
+                storedTheme === "dark" || storedTheme === "light"
+                    ? storedTheme
+                    : systemTheme;
         </script>
     </head>
     <body>

@@ -11,6 +11,8 @@ frameworks or content infrastructure when the current static setup is enough.
 - Development: `bun run dev` or `npm run dev`. When starting the dev server,
   use background mode: `astro dev --background`. Manage it with
   `astro dev stop`, `astro dev status`, and `astro dev logs`.
+- Do not start or run the site or its dev server; the user runs it in another
+  terminal.
 - Production build: `npm run build` (or `bun run build`).
 - Preview: `npm run preview`.
 - There are no test or lint scripts currently defined in `package.json`.
