@@ -60,7 +60,7 @@ const {
         border-color: color-mix(
             in srgb,
             var(--divider-color) 55%,
-            var(--text-color)
+            var(--accent-color)
         );
     }
 
@@ -97,11 +97,13 @@ const {
 
     h3 a:hover {
         text-decoration: underline;
+        text-decoration-color: var(--accent-color);
         text-underline-offset: 0.2em;
     }
 
     p {
         margin: 0;
+        font-size: 1.1rem;
         line-height: 1.55;
     }
 
@@ -117,9 +119,8 @@ const {
     .tags li {
         font-size: 0.78rem;
         line-height: 1.2;
-        color: var(--text-color);
+        color: var(--muted-text-color);
         font-style: italic;
-        opacity: 0.7;
     }
 
     .tags li:not(:last-child)::after {
@@ -129,8 +130,7 @@ const {
 
     .dates {
         margin-top: 0.65rem;
-        color: var(--text-color);
-        opacity: 0.65;
+        color: var(--muted-text-color);
         font-size: 0.8rem;
     }
 </style>

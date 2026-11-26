@@ -1,5 +1,5 @@
 ---
-import type { MarkdownLayoutProps } from "astro";
+import type { MarkdownHeading, MarkdownLayoutProps } from "astro";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "katex/dist/katex.min.css";
@@ -11,7 +11,77 @@ type Props = MarkdownLayoutProps<{
     latest_edit?: string;
 }>;
 
-const { frontmatter } = Astro.props;
+const { frontmatter, headings } = Astro.props;
+type TocItem = {
+    heading: MarkdownHeading;
+    children: TocItem[];
+};
+
+const tocItems: TocItem[] = [];
+const tocStack: { depth: number; item: TocItem }[] = [];
+
+for (const heading of headings) {
+    const item: TocItem = { heading, children: [] };
+    while (
+        tocStack.length > 0 &&
+        tocStack[tocStack.length - 1].depth >= heading.depth
+    ) {
+        tocStack.pop();
+    }
+
+    if (tocStack.length > 0) {
+        tocStack[tocStack.length - 1].item.children.push(item);
+    } else {
+        tocItems.push(item);
+    }
+
+    tocStack.push({ depth: heading.depth, item });
+}
+
+function escapeHtml(value: string) {
+    return value.replace(/[&<>"']/g, (character) => {
+        switch (character) {
+            case "&":
+                return "&amp;";
+            case "<":
+                return "&lt;";
+            case ">":
+                return "&gt;";
+            case '"':
+                return "&quot;";
+            case "'":
+                return "&#39;";
+            default:
+                return character;
+        }
+    });
+}
+
+function renderToc(items: TocItem[]): string {
+    return `<ul>${items
+        .map(
+            ({ heading, children }) =>
+                `<li><a href="#${escapeHtml(heading.slug)}">${escapeHtml(heading.text)}</a>${children.length > 0 ? renderToc(children) : ""}</li>`,
+        )
+        .join("")}</ul>`;
+}
+
+const tableOfContents =
+    headings.length > 0
+        ? [
+              '<section class="table-of-contents-section">',
+              '<h2 class="table-of-contents-title">Table of contents</h2>',
+              '<details class="table-of-contents">',
+              '<summary><span class="toc-open-label">Open table of contents</span>',
+              '<span class="toc-close-label">Close table of contents</span></summary>',
+              `<nav aria-label="Table of contents">${renderToc(tocItems)}</nav>`,
+              "</details></section>",
+          ].join("")
+        : "";
+const postContent = (await Astro.props.compiledContent()).replace(
+    /(<p>\s*)?<!--\s*toc\s*-->(\s*<\/p>)?/gi,
+    () => tableOfContents,
+);
 ---
 
 <BaseLayout title={`${frontmatter.title} — chrstncrrnd`}>
@@ -36,9 +106,7 @@ const { frontmatter } = Astro.props;
 
         <hr class="post-divider" />
 
-        <div class="post-content">
-            <slot />
-        </div>
+        <div class="post-content" set:html={postContent} />
     </article>
 </BaseLayout>
 
@@ -58,22 +126,21 @@ const { frontmatter } = Astro.props;
 
     .back-link {
         margin-bottom: 1.75rem;
-        color: var(--text-color);
+        color: var(--muted-text-color);
         font-size: 0.9rem;
         text-decoration: none;
-        opacity: 0.75;
-        transition: opacity 150ms ease;
+        transition: color 150ms ease;
     }
 
     .back-link:hover {
-        opacity: 1;
+        color: var(--text-color);
         text-decoration: underline;
+        text-decoration-color: var(--accent-color);
         text-decoration-thickness: 1px;
         text-underline-offset: 0.25em;
     }
 
     .post-header h1 {
-        max-width: 14ch;
         margin: 0;
         font-size: clamp(2.25rem, 7vw, 4rem);
         line-height: 1.02;
@@ -86,9 +153,8 @@ const { frontmatter } = Astro.props;
         flex-wrap: wrap;
         gap: 0.35rem 1.25rem;
         margin-top: 1.25rem;
-        color: var(--text-color);
+        color: var(--muted-text-color);
         font-size: 0.9rem;
-        opacity: 0.7;
     }
 
     .post-divider {
@@ -97,8 +163,101 @@ const { frontmatter } = Astro.props;
         margin: 2rem 0;
     }
 
+    :global(.table-of-contents-section) {
+        margin-bottom: 2rem;
+    }
+
+    :global(.table-of-contents-title) {
+        margin: 0 0 0.75rem;
+        font-size: 1.4rem;
+        line-height: 1.2;
+    }
+
+    :global(.table-of-contents) {
+        border: 1px solid var(--divider-color);
+        border-radius: 0;
+        background: var(--page-background);
+    }
+
+    :global(.table-of-contents summary) {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.8rem 1rem;
+        color: var(--text-color);
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 700;
+        line-height: 1.2;
+        list-style: none;
+    }
+
+    :global(.table-of-contents summary::-webkit-details-marker) {
+        display: none;
+    }
+
+    :global(.table-of-contents summary::before) {
+        width: 0;
+        height: 0;
+        border-top: 0.35rem solid transparent;
+        border-bottom: 0.35rem solid transparent;
+        border-left: 0.55rem solid var(--text-color);
+        content: "";
+        flex: none;
+        transition: transform 150ms ease;
+    }
+
+    :global(.table-of-contents[open] summary::before) {
+        transform: rotate(90deg);
+    }
+
+    :global(.table-of-contents[open] .toc-open-label),
+    :global(.table-of-contents:not([open]) .toc-close-label) {
+        display: none;
+    }
+
+    :global(.table-of-contents[open] nav) {
+        padding: 0 1rem 1rem;
+    }
+
+    .post-content :global(.table-of-contents ul) {
+        display: grid;
+        gap: 0.5rem;
+        margin: 0;
+        padding-inline-start: 1.25rem;
+        list-style: disc;
+    }
+
+    .post-content :global(.table-of-contents ul ul) {
+        margin-top: 0.4rem;
+        list-style: circle;
+    }
+
+    .post-content :global(.table-of-contents nav) {
+        font-size: 1.15rem;
+        line-height: 1.5;
+    }
+
+    .post-content :global(.table-of-contents li) {
+        color: var(--text-color);
+        margin: 0;
+        padding: 0;
+    }
+
+    .post-content :global(.table-of-contents a) {
+        color: var(--text-color);
+        text-decoration: none;
+    }
+
+    .post-content :global(.table-of-contents a:hover) {
+        color: var(--text-color);
+        text-decoration: underline;
+        text-decoration-color: var(--accent-color);
+        text-underline-offset: 0.2em;
+    }
+
     .post-content {
-        font-size: 1.125rem;
+        font-size: 1.25rem;
         line-height: 1.78;
     }
 
@@ -106,7 +265,7 @@ const { frontmatter } = Astro.props;
         margin: 0 0 1.35em;
     }
 
-    .post-content :global(h2),
+    /*.post-content :global(h2),
     .post-content :global(h3),
     .post-content :global(h4) {
         scroll-margin-top: 2rem;
@@ -126,11 +285,11 @@ const { frontmatter } = Astro.props;
     .post-content :global(h4) {
         margin: 1.5em 0 0.5em;
         font-size: 1.15rem;
-    }
+    }*/
 
     .post-content :global(a) {
         color: inherit;
-        text-decoration-color: #9b7543;
+        text-decoration-color: var(--accent-color);
         text-decoration-thickness: 1px;
         text-underline-offset: 0.18em;
     }
@@ -142,7 +301,7 @@ const { frontmatter } = Astro.props;
     .post-content :global(blockquote) {
         margin: 1.75em 0;
         padding: 0.15em 0 0.15em 1.25em;
-        border-left: 3px solid #9b7543;
+        border-left: 3px solid var(--accent-color);
         font-style: italic;
     }
 
@@ -162,7 +321,7 @@ const { frontmatter } = Astro.props;
     }
 
     .post-content :global(li::marker) {
-        color: #9b7543;
+        color: var(--text-color);
     }
 
     .post-content :global(code) {
@@ -171,7 +330,7 @@ const { frontmatter } = Astro.props;
         background: color-mix(in srgb, var(--text-color) 5%, transparent);
         padding: 0.12em 0.3em;
         font-family: "JetBrains Mono", monospace;
-        font-size: 0.82em;
+        font-size: 0.8em;
         font-feature-settings:
             "liga" 1,
             "calt" 1;
@@ -182,14 +341,14 @@ const { frontmatter } = Astro.props;
         margin: 1.75em 0;
         overflow-x: auto;
         border: 1px solid var(--divider-color);
-        border-radius: 0.5rem;
+        border-radius: 0.25rem;
         background: color-mix(
             in srgb,
-            var(--text-color) 4%,
+            var(--accent-color) 4%,
             var(--page-background)
         );
         padding: 1.1rem 1.25rem;
-        line-height: 1.55;
+        line-height: 1.2;
         font-family: "JetBrains Mono", monospace !important;
         font-feature-settings:
             "liga" 1,
@@ -201,7 +360,7 @@ const { frontmatter } = Astro.props;
         border: 0;
         background: transparent;
         padding: 0;
-        font-size: 0.86em;
+        font-size: 0.9em;
         font-family: "JetBrains Mono", monospace !important;
     }
 
@@ -244,6 +403,14 @@ const { frontmatter } = Astro.props;
         padding-block: 0.25em;
     }
 
+    .post-content :global(.katex) {
+        font-size: 1em;
+    }
+
+    .post-content :global(.katex-display .katex) {
+        font-size: 1.1em;
+    }
+
     @media (max-width: 640px) {
         .post {
             padding-block: 0.75rem 2.5rem;
@@ -258,7 +425,7 @@ const { frontmatter } = Astro.props;
         }
 
         .post-content {
-            font-size: 1.05rem;
+            font-size: 1.15rem;
             line-height: 1.72;
         }
     }
