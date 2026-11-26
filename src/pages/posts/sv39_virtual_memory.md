@@ -18,6 +18,8 @@ memory systems) in RISC-V work, why they exist and what a simple implementation
 could look like. The goal of this article is intuition rather than completeness,
 so I deliberately omit certain details for the sake of simplicity. You should be
 comfortable with C and with binary and hexadecimal; no OS background is needed. 
+If you are already familliar with the concept of virtual memory and paging
+you can skip straight to the [implementation section](#2---virtual-memory-in-risc-v).
 
 <!-- toc -->
 
